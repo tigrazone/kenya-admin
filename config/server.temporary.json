@@ -1,0 +1,33 @@
+{
+  "bucket":  {
+    "name":"kenyam-dev",
+    "clear":false
+  },
+  "server":{
+    "port":3000,
+    "clusterMode":false
+  },
+  "database":{
+    "port":3306,
+    "host":"km-dev.cedcdrekb44e.us-west-2.rds.amazonaws.com",
+    "name":"km_dev",
+    "user":{
+      "password":"z82282677643283dyPa75758e6AWh22z82U9dJ2c",
+      "name":"root"
+    },
+	
+    "logging": false,
+    "sync": false,
+    "force": false
+  },
+  "paginationLimit":10,
+  "aws":{
+    "accessKeyId":"AKIAIKRMBVZ3YD6GEMQQ",
+    "secretAccessKey":"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",
+    "region":"us-east-2"},
+  "mailgun":{
+    "domainName":"",
+    "privateApi":"",
+    "publicApi":""
+  }
+}

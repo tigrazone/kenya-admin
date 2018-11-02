@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Admin</title>
+
+	<link rel='stylesheet prefetch' href='https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic'>
+	<link rel='stylesheet prefetch' href='https://fonts.googleapis.com/icon?family=Material+Icons'>
+
+<!--
+	<link rel='stylesheet prefetch' href='https://unpkg.com/vue-material@latest/dist/vue-material.css'>
+-->
+	<link rel='stylesheet prefetch' href='/local/vue-material.min.css'>
+	
+	<link rel='stylesheet' href='/css/style.css'>
+</head>
+
+<body>
+  <div id="app"></div>
+
+<template id="root-template">
+  <div>
+
+	<div v-show="authId">
+	  <md-toolbar>
+		<h1 class="md-title" style="flex: 1">Admin panel</h1>
+		<!--
+		<md-button class="md-icon-button">
+		  <md-icon>more_vert</md-icon>
+		</md-button>
+		-->
+
+
+		<md-menu>
+
+		<md-button class="md-icon-button ava" md-menu-trigger>
+		  <img :src="USERavatar" alt="Avatar">
+		</md-button>
+		<p style="margin:0">{{username}}</p>
+		  <md-menu-content>
+			<md-menu-item @click="editMyProfile">Edit profile</md-menu-item>
+			<md-menu-item @click="doLogoutNOW">Logout</md-menu-item>
+		  </md-menu-content>
+		</md-menu>
+	  </md-toolbar>
+
+
+	  </md-toolbar>
+
+	  <md-tabs @change="onChange" ref="tabs">
+		<md-tab md-label="Posts" id="posts" :md-active="isPath('/posts')"><router-link to="/posts" exact></router-link></md-tab>
+		<md-tab md-label="Comments" id="comments" :md-active="isPath('/comments')"><router-link to="/comments"></router-link></md-tab>
+		<md-tab md-label="Feeds" id="feeds" :md-active="isPath('/feeds')"><router-link to="/feeds"></router-link></md-tab>
+		<md-tab md-label="Polls" id="polls" :md-active="isPath('/polls')"><router-link to="/polls"></router-link></md-tab>
+		<md-tab md-label="Overlays" id="overlays" :md-active="isPath('/overlays')"><router-link to="/overlays"></router-link></md-tab>
+		<md-tab md-label="Users" id="users" :md-active="isPath('/users')"><router-link to="/users"></router-link></md-tab>
+		<!--
+		<md-tab md-label="Logout" id="logout"><router-link to="/logout"></router-link></span></md-tab>
+		-->
+		<!--
+			<md-tab md-label="Login" id="login" :md-active="isPath('/login')"><router-link to="/login"></router-link></md-tab>
+		-->
+	  </md-tabs>
+
+
+      <transition name="fade" mode="out-in">
+        <keep-alive>
+          <router-view></router-view>
+        </keep-alive>
+      </transition>
+	  </div>
+	  
+	  
+	 <div class="loaders_div">
+		 <p v-show="!posts_loaded && isPath('/posts') && authId" class=>Loading data... <md-spinner :md-size="20" md-indeterminate class="md-accent"></md-spinner></P>
+		 <p v-show="!comments_loaded && isPath('/comments') && authId">Loading data... <md-spinner :md-size="20" md-indeterminate class="md-accent"></md-spinner></P>
+		 <p v-show="!feeds_loaded && isPath('/feeds') && authId">Loading data... <md-spinner :md-size="20" md-indeterminate class="md-accent"></md-spinner></P>
+		 <p v-show="!users_loaded && isPath('/users') && authId">Loading data... <md-spinner :md-size="20" md-indeterminate class="md-accent"></md-spinner></P>
+		 <p v-show="!polls_loaded && isPath('/polls') && authId">Loading data... <md-spinner :md-size="20" md-indeterminate class="md-accent"></md-spinner></P>
+		 <p v-show="!overlays_loaded && isPath('/overlays') && authId">Loading data... <md-spinner :md-size="20" md-indeterminate class="md-accent"></md-spinner></P>
+		 
+		 <p v-show="postSTARTloading && aPostID>0 && authId">Loading data... <md-spinner :md-size="20" md-indeterminate class="md-accent"></md-spinner></P>
+	  </div>
+	  
+	  <!--
+	  <p>createNEWuser {{ createNEWuser }}</p>
+	  <p>idEDITuser {{ idEDITuser }}</p>
+	  <p>authId {{ authId }}</p>
+	  <p>isPath('/users') {{ isPath('/users') }}</p>
+	  -->
+
+		  <md-card md-with-hover v-show="!authId || ((createNEWuser || idEDITuser>0) && authId)">
+			<md-card-header v-show="!authId">
+			  <div class="md-title">Welcome to admin panel!</div>
+			</md-card-header>
+			<md-card-header v-show="createNEWuser && isPath('/users') && authId">
+			  <div class="md-title">Create new user</div>
+			</md-card-header>
+			<md-card-header v-show="idEDITuser>0 && isPath('/users') && authId && idEDITuser!=authId">
+			  <div class="md-title">Update user</div>
+			</md-card-header>
+			<md-card-header v-show="idEDITuser>0 && authId && idEDITuser==authId">
+			  <div class="md-title">Edit profile</div>
+			</md-card-header>
+
+			<!-- login form -->
+			<form v-show="logInForm && !authId" novalidate @submit.prevent="validateLoginForm">
+			  <md-input-container v-bind:class="{ 'md-input-invalid': attemptSubmitLogin && (missingLoginEmail || wrongLoginEmail || emailLoginNotFound || userAccessDenied)}">
+				<label>Email</label>
+				<md-input type="text" v-model="login_email"></md-input>
+
+				<span class="md-error" v-if="attemptSubmitLogin && missingLoginEmail">Please fill in the &quot;Email&quot;</span>
+				<span class="md-error" v-if="!goodLoginEmail || (attemptSubmitLogin && wrongLoginEmail)">Email entered incorrectly</span>
+				<span class="md-error" v-if="attemptSubmitLogin && emailLoginNotFound">Email not found</span>
+				<span class="md-error" v-if="userAccessDenied">Access Denied</span>
+			  </md-input-container>
+
+			  <md-input-container v-show="!showPass" v-bind:class="{ 'md-input-invalid': attemptSubmitLogin && (missingPwd || emptyPwd || wrongPwd)}">
+			  
+					<label>Password</label>
+					<md-input type="password" v-model="login_pwd"></md-input>
+					<md-button class="md-icon-button" @click="showPass=true" title="show password">
+						<md-icon>visibility</md-icon>
+					</md-button>
+				<span class="md-error" v-if="attemptSubmitLogin && (missingPwd || emptyPwd)">Please fill in the &quot;Password&quot;</span>
+				<span class="md-error" v-if="attemptSubmitLogin && wrongPwd">Wrong Password</span>
+			  
+					
+			  </md-input-container>
+			  <md-input-container v-show="showPass" v-bind:class="{ 'md-input-invalid': attemptSubmitLogin && (missingPwd || emptyPwd || wrongPwd)}">
+						
+				  
+					<label>Password</label>
+					<md-input type="text" v-model="login_pwd"></md-input>
+					
+					<md-button class="md-icon-button" @click="showPass=false" title="hide password">
+						<md-icon>visibility_off</md-icon>
+					</md-button>
+				<span class="md-error" v-if="attemptSubmitLogin && (missingPwd || emptyPwd)">Please fill in the &quot;Password&quot;</span>
+				<span class="md-error" v-if="attemptSubmitLogin && wrongPwd">Wrong Password</span>
+			  
+			 </md-input-container>
+			 
+				
+			  <md-card-actions>
+				  <md-button v-on:click="validateLoginForm" class="md-raised md-primary" :disabled="!canTryLoginNoCheckAccess">Login</md-button>
+				  <md-button v-on:click="logInForm = false" >Signup</md-button> 
+			  </md-card-actions>
+			</form>
+
+			<!-- signup form -->
+			
+			<!--
+			 <form v-show="(!authId && !logInForm) || ((createNEWuser || idEDITuser>0) && isPath('/users') && authId)" novalidate @submit.stop.prevent="validateSignupForm">
+			 (!authId && !logInForm) - возможность зарегиться
+			 -->
+			 <form v-show="(!authId && !logInForm) || ((createNEWuser || idEDITuser>0)  && authId)" novalidate @submit.stop.prevent="validateSignupForm">
+			  <md-input-container v-bind:class="{ 'md-input-invalid': attemptSubmitSignup && (missingLoginSignup || loginSignupAlreadyExists)}">
+				<label>Login</label>
+				<md-input type="text" v-model="signup_login"></md-input>
+
+				<span class="md-error" v-if="attemptSubmitSignup && missingLoginSignup">Please fill in the &quot;Login&quot;</span>
+				<span class="md-error" v-if="attemptSubmitSignup && loginSignupAlreadyExists">Login already exists. Try another</span>
+			  </md-input-container>
+			  <md-input-container v-bind:class="{ 'md-input-invalid': (attemptSubmitSignup && (missingEmailSignup  || wrongEmailSignup || emailSignupAlreadyExists)) || (!goodSignupEmail)}">
+				<label>Email</label>
+				<md-input type="text" v-model="signup_email"></md-input>
+
+				<span class="md-error" v-if="attemptSubmitSignup && missingEmailSignup">Please fill in the &quot;Email&quot;</span>
+				<span class="md-error" v-if="!goodSignupEmail || (attemptSubmitSignup && wrongEmailSignup)">Email entered incorrectly</span>
+				<span class="md-error" v-if="attemptSubmitSignup && emailSignupAlreadyExists">Email already exists. Try another</span>
+			  </md-input-container>
+			  
+			  <md-input-container v-show="!showPass" v-bind:class="{ 'md-input-invalid': attemptSubmitSignup && (missingPwdSignup || emptyPwdSignup)}" v-show="!idEDITuser">
+			  
+					<label>Password</label>
+					<md-input type="password" v-model="signup_pwd"></md-input>
+					<md-button class="md-icon-button" @click="showPass=true" title="show password">
+						<md-icon>visibility</md-icon>
+					</md-button>
+			  
+				<span class="md-error" v-if="attemptSubmitSignup && (missingPwdSignup || emptyPwdSignup)">Please fill in the &quot;Password&quot;</span>
+			  </md-input-container>
+			  
+			  <md-input-container v-show="showPass" v-bind:class="{ 'md-input-invalid': attemptSubmitSignup && (missingPwdSignup || emptyPwdSignup)}" v-show="!idEDITuser">
+				
+					<label>Password</label>
+					<md-input type="text" v-model="signup_pwd"></md-input>
+					
+					<md-button class="md-icon-button" @click="showPass=false" title="hide password">
+						<md-icon>visibility_off</md-icon>
+					</md-button>
+			  
+				<span class="md-error" v-if="attemptSubmitSignup && (missingPwdSignup || emptyPwdSignup)">Please fill in the &quot;Password&quot;</span>
+			  </md-input-container>
+
+			  <div v-show="idEDITuser>0 && idEDITuser==authId">
+				  <div v-show="!user_avatar">
+					<input id="postFileUserAvatar" type="file" accept="image/*" @change="onFileChangeUserAvatar" style="display:none">
+
+					<md-button class="md-raised" @click="user_avatar_upload()">
+						<label>select image</label>
+					</md-button>
+					</div>
+
+				  <div v-show="user_avatar">
+					<img :src="user_avatar" width=100 /><br>
+					<md-button @click="removeUserAvatar">Remove avatar</button>
+				  </div>
+			  </div>
+
+
+					<p v-if="loginServerError" style="color:red">Can't login. Server error</P>
+
+			  <md-card-actions v-show="!authId && !logInForm">
+				  <md-button v-on:click="validateSignupForm" class="md-raised md-warn" :disabled="!canTrySignup">Signup</md-button>
+				  <md-button v-on:click="logInForm = true">Login</md-button>
+			  </md-card-actions>
+
+			  <md-card-actions v-show="createNEWuser && isPath('/users') && authId">
+				  <md-button v-on:click="validateSignupForm" class="md-raised md-warn" :disabled="!canTrySignup">Create</md-button>
+				  <md-button v-on:click="createNEWuser=false;idEDITuser=0">cancel</md-button>
+			  </md-card-actions>
+
+			  <md-card-actions v-show="idEDITuser>0 && authId">
+				  <md-button v-on:click="validateSignupForm" class="md-raised md-warn" :disabled="!canTrySignup">Update</md-button>
+				  <md-button v-on:click="createNEWuser=false;idEDITuser=0">cancel</md-button>
+			  </md-card-actions>
+			</form>
+		  </md-card>
+
+
+
+
+		  <!-- comment edit -->
+		  <md-card md-with-hover v-show="(createNEWcomment || idEDITcomment>0) && isPath('/comments') && authId">
+			<md-card-header v-show="createNEWcomment && isPath('/comments') && authId">
+			  <div class="md-title">Create comment</div>
+			</md-card-header>
+			<md-card-header v-show="idEDITcomment>0 && isPath('/comments') && authId">
+			  <div class="md-title">Update comment</div>
+			</md-card-header>
+
+			<!-- comment form -->
+			<form novalidate @submit.prevent="validateCommentForm">
+				<md-input-container>
+					<label>Comment</label>
+					<md-input type="text" v-model="comment_text"></md-input>
+				</md-input-container>
+
+			<md-input-container v-bind:class="{ 'md-input-invalid': (attemptSubmitCOMMENT && comment_post_id<1)}">
+				<label>post</label>
+				<md-select v-model="comment_post_id">
+					<md-option v-for="post in orderedPOSTItems"
+					:value="post.id"
+					>{{ post.bigname }}</md-option>
+				</md-select>
+			</md-input-container>
+
+			  <md-card-actions>
+				  <md-button v-on:click="validateCommentForm" class="md-raised md-primary big_button_in_tab" :disabled="!canTrySendComment">save</md-button>
+				  <md-button v-on:click="clearCommentForm" class="md-raised  big_button_in_tab">cancel</md-button>
+			  </md-card-actions>
+			</form>
+		  </md-card>
+
+
+		  <!-- feed edit -->
+		  <md-card md-with-hover v-show="(createNEWfeed || idEDITfeed>0) && isPath('/feeds') && authId">
+			<md-card-header v-show="createNEWfeed && isPath('/feeds') && authId">
+			  <div class="md-title">Create new feed</div>
+			</md-card-header>
+			<md-card-header v-show="idEDITfeed>0 && isPath('/feeds') && authId">
+			  <div class="md-title">Update feed</div>
+			</md-card-header>
+
+			<!-- feed form -->
+			<form novalidate @submit.prevent="validateFEEDForm">
+				<md-input-container>
+					<label>Feed name</label>
+					<md-input type="text" v-model="feed_name"></md-input>
+				</md-input-container>
+
+			  <md-card-actions>
+				  <md-button v-on:click="validateFEEDForm" class="md-raised md-primary big_button_in_tab" :disabled="!canTrySendFeed">save</md-button>
+				  <md-button v-on:click="clearFEEDForm" class="md-raised  big_button_in_tab">cancel</md-button>
+			  </md-card-actions>
+			</form>
+		  </md-card>
+
+
+		  <!-- poll edit -->
+		  <md-card md-with-hover v-show="(createNEWpoll || idEDITpoll>0) && isPath('/polls') && authId">
+			<md-card-header v-show="createNEWpoll && isPath('/polls') && authId">
+			  <div class="md-title">Create new poll</div>
+			</md-card-header>
+			<md-card-header v-show="idEDITpoll>0 && isPath('/polls') && authId">
+			  <div class="md-title">Update poll</div>
+			</md-card-header>
+
+			<!-- poll form -->
+			<form novalidate @submit.prevent="validatePollForm">
+				<md-input-container v-bind:class="{ 'md-input-invalid': (attemptSubmitPOLL && missingPollName)}">
+					<label>Poll name</label>
+					<md-input type="text" v-model="poll_name"></md-input>
+				</md-input-container>
+				
+					<md-checkbox @click="POLLcheckboxActiveToggle" v-model="poll_active">active</md-checkbox>
+
+			  <md-card-actions>
+				  <md-button v-on:click="validatePollForm" class="md-raised md-primary big_button_in_tab" :disabled="!canTrySendPoll">save</md-button>
+				  <md-button v-on:click="clearPOLLForm" class="md-raised  big_button_in_tab">cancel</md-button>
+			  </md-card-actions>
+			</form>
+		  </md-card>
+		  <!-- ___________ -->
+		  
+
+	<div v-show="!(createNEWuser || idEDITuser>0) && isPath('/users') && authId">
+		<md-button v-on:click="createNEWuser=true;idEDITuser=0" class="md-raised md-primary">Add new</md-button>
+	</div>
+
+
+	<div v-show="!(createNEWfeed || idEDITfeed>0) && isPath('/feeds') && authId">
+		<md-button v-on:click="createNEWfeed=true;idEDITfeed=0" class="md-raised md-primary">Add new</md-button>
+	</div>
+
+
+	<div v-show="!(createNEWcomment || idEDITcomment>0) && isPath('/comments') && authId">
+		<md-button v-on:click="createNEWcomment=true;idEDITcomment=0" class="md-raised md-primary">Add new</md-button>
+	</div>
+
+
+	<div v-show="!(createNEWpoll || idEDITpoll>0) && isPath('/polls') && authId">
+		<md-button v-on:click="createNEWpoll=true;idEDITpoll=0" class="md-raised md-primary">Add new</md-button>
+	</div>
+
+
+
+  <div v-show="!(createNEWpost || idEDITpost>0)  && isPath('/posts') && authId">
+	<md-button v-on:click="createNEWpost=true;idEDITpost=0" class="md-raised md-primary">Add new</md-button>
+	
+	
+	
+	<!-- filter by feedId -->
+			<div style="white-space: nowrap;text-align: right">
+			<md-input-container class="posts_by_feed">
+				<label>posts by feed</label>
+				<md-select v-model="post_feed_id_filter" @change="reOrder0"><md-option value="" :selected="post_feed_id_filter<1">ALL</md-option>
+					<md-option v-for="feed in feeds_list"
+					:value="feed.id"  :selected="post_feed_id_filter==feed.id"
+					>{{ feed.name }}</md-option>
+				</md-select>
+			</md-input-container>
+		</div>
+	<!-- filter by feedId END -->
+	
+	<!--
+	<p style="text-align:right;margin:0">show as <md-button v-bind:class="{ 'md-warn': postsAStable}" v-on:click="set_postsAStable(true)">table</md-button>
+	<md-button v-bind:class="{ 'md-warn': !postsAStable}" v-on:click="set_postsAStable(false)">list</md-button></p>
+	-->
+	
+  </div>
+
+
+  <div v-show="!(createNEWoverlay || idEDIToverlay>0)  && isPath('/overlays') && authId">
+	<md-button v-on:click="createNEWoverlay=true;idEDIToverlay=0" class="md-raised md-primary">Add new</md-button>
+  </div>
+
+  <!-- users table -->
+	  <md-table-card v-show="!(createNEWuser || idEDITuser>0) && authId && isPath('/users')">
+		  <md-table md-sort="username" @sort="reOrder">
+			  <md-table-header>
+				<md-table-row>
+				  <md-table-head md-sort-by="id" md-numeric id="users_id">id</md-table-head>
+				  <md-table-head md-sort-by="username">name</md-table-head>
+				  <md-table-head md-sort-by="email">email</md-table-head>
+				  <md-table-head md-sort-by="posts" md-numeric id="users_posts">posts</md-table-head>
+				  <md-table-head>&nbsp;</md-table-head>
+				</md-table-row>
+			  </md-table-header>
+
+			  <md-table-body>
+				<md-table-row v-for="user in orderedUSERItems">
+				  <md-table-cell>{{user.id}}</md-table-cell>
+				  <md-table-cell class="align_left">{{user.nickname}}</md-table-cell>
+				  <md-table-cell class="align_left">{{user.email}}</md-table-cell>
+				  <md-table-cell><span v-show="!user.posts">&mdash;</span><span v-show="user.posts">{{user.posts}}</span></md-table-cell>
+
+
+				  <md-table-cell class="align_left actions">
+						<md-button v-on:click="EDITuser(user.id)"><i class="material-icons">mode_edit</i></md-button>
+						<!-- <md-button class="md-warn" v-on:click="KILLuser(feed.id)"><i class="material-icons">clear</i></md-button> -->
+					  &nbsp;
+				  </md-table-cell>
+
+				</md-table-row>
+			  </md-table-body>
+		 </md-table>
+
+   <!--
+	    <md-table-pagination
+    :md-size="size"
+    :md-total="count"
+    :md-page="page"
+    md-label="Rows"
+    md-separator="of"
+    :md-page-options="page_options"
+    @pagination="onPagination($event)">
+    </md-table-pagination>
+	-->
+</md-table-card>
+
+
+  <md-list class="custom-list md-triple-line">
+
+
+  <div v-show="!(createNEWpost || idEDITpost>0)  && !postsAStable && isPath('/posts') && authId">
+    <md-list-item v-for="post in orderedPOSTItems">
+
+      <md-avatar v-if="post.mediatype!='text'" class="posts_list_img">
+		
+					<span v-show="post.mediatype=='image'"><a :href="post.medialink" target="_blank"><img :src="post.medialink"></a></span>
+					<span v-show="post.mediatype=='video'">
+					<video  loop="loop" controls="controls" style="min-width:120px">
+					  <source :src="post.medialink">
+					  Video tag not supported. Download the video <a href="movie.webm">here</a>.
+					 </video> 
+					</span>
+      </md-avatar>
+	  
+      <div class="md-list-text-container">
+        <span>{{post.title}}</span>
+        <p>{{post.subtitle}}</p>
+        <small><i>{{post.description}}</i></small>
+      </div>
+
+
+
+  <md-list-item v-show="!(createNEWpost || idEDITpost>0) && isPath('/posts') && authId">
+					<md-button v-on:click="EDITpost(post.id)"><i class="material-icons">mode_edit</i></md-button>
+					<!--
+					<md-button class="md-warn" v-on:click="KILLpost(post.id)"><i class="material-icons">clear</i></md-button>
+					-->
+  </md-list-item>
+
+	  <!--
+      <md-button class="md-icon-button md-list-action">
+        <md-icon class="md-primary">star</md-icon>
+      </md-button>
+	  -->
+<!--
+      <md-divider class="md-inset"></md-divider>
+    </md-list-item>
+	-->
+	</div>
+
+
+    </md-list>
+
+      <div class="md-list-text-container">
+
+
+	  <md-dialog-alert
+			:md-content="alert.content"
+			:md-ok-text="alert.ok"
+			ref="published_DLG"
+			>
+	</md-dialog-alert>
+
+
+	  <!-- post edit -->
+
+		  <md-card md-with-hover v-show="(createNEWpost || idEDITpost>0)  && isPath('/posts') && authId">
+			<md-card-header>
+			  <div class="md-title" v-show="createNEWpost && isPath('/posts') && authId">Create new post</div>
+			  <div class="md-title" v-show="idEDITpost>0 && isPath('/posts') && authId">Edit post</div>
+			</md-card-header>
+			<form novalidate @submit.prevent="validatePOSTForm">
+
+		<md-input-container v-bind:class="{ 'md-input-invalid': attemptSubmitPOST && missingPOSTtitle}" v-show="false">
+				<label>Title</label>
+				<md-input type="text" v-model="post_title"></md-input>
+
+				<span class="md-error" v-if="attemptSubmitPOST && missingPOSTtitle">Please fill in the &quot;Title&quot;</span>
+			  </md-input-container>
+
+
+		<md-input-container v-show="false">
+				<label>subtitle</label>
+				<md-input type="text" v-model="post_subtitle"></md-input>
+
+			  </md-input-container>
+
+		<md-input-container v-bind:class="{ 'md-input-invalid': attemptSubmitPOST && missingPOSTdescription}">
+				<label>description</label>
+				<md-textarea v-model="post_description"></md-textarea>
+
+			  </md-input-container>
+
+			<md-input-container v-bind:class="{ 'md-input-invalid': (attemptSubmitPOST && missingPOSTfeed)}">
+				<label>feed</label>
+				<md-select v-model="post_feed">
+					<md-option v-for="feed in orderedFEEDItems"
+					:value="feed.id"
+					>{{ feed.name }}</md-option>
+				</md-select>
+			</md-input-container>
+
+			<md-input-container><label>mediatype</label>
+				<md-select v-model="post_mediatype" id="post_mediatype" name="post_mediatype"><md-option value="text">text</md-option><md-option value="image">image</md-option><md-option value="video">video</md-option></md-select>
+			</md-input-container>
+
+
+			<div v-show="post_mediatype=='image'">
+			  <div v-show="!post_image">
+				<input id="postFileInput" type="file" accept="image/*" @change="onFileChangeImage" style="display:none">
+
+				<md-button class="md-raised" @click="image_upload()" v-show="post_mediatype=='image'">
+					<label>select image</label>
+				</md-button>
+				</div>
+
+			  <div v-show="post_image">
+				<img :src="post_image" width=100 /><br>
+				<md-button @click="removeImage">Remove image</button>
+			  </div>
+			</div>
+
+
+			  <div v-show="post_mediatype=='video'">
+				<input id="postFileInputMedia" type="file" accept="video/*" @change="onFileChangeMedia" style="display:none">
+
+				<md-button class="md-raised" @click="media_upload()" v-show="!post_media_sel">
+					<label>select file</label>
+				</md-button>
+
+
+				<div v-show="post_media_sel">
+				<p>File selected</p>
+
+				<md-button class="md-raised" @click="cleanMEDIA">
+					<label>select another</label>
+				</md-button>
+									
+								
+					<p v-if="showLOADINGspinner">Loading data... <md-spinner :md-size="20" md-indeterminate class="md-accent"></md-spinner> <md-button @click="doReloadPage">cancel</md-button></P>
+					
+					<p v-if="showLOADINGerror" style="color:red">Loading error. File not loaded</P>
+					<p v-if="showPostLOADINGerror" style="color:red">Publish error. <a href="#" @click="validatePOSTForm">Try again</a></P>
+				
+				</div>
+			  </div>
+			  <!--
+			  <p>post_media {{post_media}}</p>
+			  -->
+
+
+			  <md-card-actions v-if="!showLOADINGspinner">
+				  <md-button v-on:click="validatePOSTForm" class="md-raised md-primary" :disabled="!canTryPOST">Publish</md-button>
+				  <md-button v-on:click="clearPOSTForm" class="md-raised">cancel</md-button>
+			  </md-card-actions>
+			  </form>
+			  </md-card>
+      </div>
+
+
+	 <div v-show="!(createNEWpost || idEDITpost>0) && isPath('/posts') && authId">
+	 
+	  <!-- posts table -->
+	  <md-table-card v-show="!(createNEWpost || idEDITpost>0) && postsAStable && isPath('/posts') && authId">
+		  <md-table md-sort="datetime" @sort="reOrder">
+			  <md-table-header>
+				<md-table-row>
+				  <md-table-head md-sort-by="id" md-numeric id="posts_id">id</md-table-head>
+				  <!--
+				  <md-table-head md-sort-by="title">title</md-table-head>
+				  <md-table-head md-sort-by="subtitle">subtitle</md-table-head>
+				  -->
+				  <md-table-head md-sort-by="description">description</md-table-head>
+				  <md-table-head md-sort-by="mediatype" id="posts_mediatype">mediatype</md-table-head>
+				  <md-table-head md-sort-by="medialink">media</md-table-head>
+				  <md-table-head md-sort-by="userId" md-numeric id="posts_userid">userId</md-table-head>
+				  <md-table-head md-sort-by="feedId" md-numeric id="posts_feed">feedId</md-table-head>
+				  <!--
+				  <md-table-head md-sort-by="comments" md-numeric id="posts_comments">comments</md-table-head>
+				  -->
+				  <md-table-head md-sort-by="datetime" md-numeric id="posts_datetime">datetime</md-table-head>
+				</md-table-row>
+			  </md-table-header>
+
+			  <md-table-body>
+				<md-table-row v-for="post in orderedPOSTItems">
+				  <md-table-cell><a :href="post.postLINK">{{post.id}}</a></md-table-cell>
+				  <!--
+				  <md-table-cell class="align_left min_padding"><span v-show="post.title=='undefined'">&nbsp;</span><span v-show="post.title!='undefined'">{{post.title}}</span></md-table-cell>
+				  <md-table-cell class="align_left min_padding"><span v-show="post.subtitle=='undefined'">&nbsp;</span><span v-show="post.subtitle!='undefined'">{{post.subtitle}}</span></md-table-cell>
+				  -->
+				  <md-table-cell class="align_left w100"><a :href="post.postLINK"><span class="cl_post_desc">{{post.description}}</span></a></md-table-cell>
+				  <md-table-cell>{{post.mediatype}}</md-table-cell>
+
+				  <md-table-cell class="align_left">
+					<span v-show="post.mediatype=='image'"><a :href="post.medialink" target="_blank"><img :src="post.medialink" style="width:100%;min-width:150px"></a></span>
+					<span v-show="post.mediatype=='video'">
+					<video  loop="loop" controls="controls" style="width:100%;min-width:150px">
+					  <source :src="post.medialink">
+					  Video tag not supported. Download the video <a :href="post.medialink">here</a>.
+					 </video> 
+ <!--
+					<a :href="post.medialink" target="_blank">{{post.medialinkUuid}}</a>
+				  -->
+					</span>
+				  </md-table-cell>
+
+				  <md-table-cell>{{post.userId}}<span v-show="post.userNAME"> ({{post.userNAME}})</span></md-table-cell>
+				  <md-table-cell>{{post.feedId}}<span v-show="post.feedNAME"> ({{post.feedNAME}})</span></md-table-cell>
+				  <!--
+				  <md-table-cell><span v-show="!post.comments">&mdash;</span><a href="#comments/" v-on:click="toCommentsByPost(post.id)" v-show="post.comments">{{post.comments}}</a></md-table-cell>
+				  -->
+				  <md-table-cell><span v-show="post.dateTimeSTR">{{post.dateTimeSTR}}</span><span v-show="!post.dateTimeSTR">{{post.datetime}}</span></md-table-cell>
+				  <md-table-cell>
+
+					<md-button v-on:click="EDITpost(post.id)"><i class="material-icons">mode_edit</i></md-button>
+					<!--
+					<md-button class="md-warn" v-on:click="KILLpost(post.id)"><i class="material-icons">clear</i></md-button>
+					-->
+
+				  </md-table-cell>
+				</md-table-row>
+			  </md-table-body>
+		 </md-table>
+
+		 <!--
+		  <md-table-pagination
+    :md-size="size"
+    :md-total="count"
+    :md-page="page"
+    md-label="Rows"
+    md-separator="of"
+    :md-page-options="page_options"
+    @pagination="onPagination($event)">
+    </md-table-pagination>
+	-->
+</md-table-card>
+</div>
+
+<!--
+{
+	datetime: "2017-09-30T22:39:40.000Z",
+	id:11,
+	text:"Comment 11",
+	user:{id: 2, nickname: "test", email: "test@test.com"}
+}
+-->
+	  <!-- comments table -->
+	  <md-table-card v-show="!(createNEWcomment || idEDITcomment>0) && isPath('/comments') && authId">
+		  <md-table md-sort="datetime" @sort="reOrder">
+			  <md-table-header>
+				<md-table-row>
+				  <md-table-head md-sort-by="id" md-numeric id="posts_id">id</md-table-head>
+				  <md-table-head md-sort-by="text">text</md-table-head>
+				  <md-table-head md-sort-by="postId" md-numeric id="posts_userid">post</md-table-head>
+				  <md-table-head md-sort-by="userId" md-numeric id="posts_feed">user</md-table-head>
+				  <md-table-head md-sort-by="datetime" md-numeric id="posts_datetime">datetime</md-table-head>
+				</md-table-row>
+			  </md-table-header>
+
+			  <md-table-body>
+				<md-table-row v-for="comment in orderedCOMMENTItems">
+				  <md-table-cell>{{comment.id}}</md-table-cell>
+				  <md-table-cell class="align_left">{{comment.text}}</md-table-cell>
+				  <md-table-cell>{{comment.postName}}</span></md-table-cell>
+				  <md-table-cell>{{comment.userName}}</span></md-table-cell>
+				  <md-table-cell><span v-show="comment.dateTimeSTR">{{comment.dateTimeSTR}}</span><span v-show="!comment.dateTimeSTR">{{comment.datetime}}</span></md-table-cell>
+				  <md-table-cell>
+						<!--
+					<md-button v-on:click="EDITcomment(comment.id)"><i class="material-icons">mode_edit</i></md-button>
+					<md-button class="md-warn" v-on:click="KILLcomment(comment.id)"><i class="material-icons">clear</i></md-button>
+						-->
+				  </md-table-cell>
+				</md-table-row>
+			  </md-table-body>
+		 </md-table>
+
+		 <!--
+		  <md-table-pagination
+    :md-size="size"
+    :md-total="count"
+    :md-page="page"
+    md-label="Rows"
+    md-separator="of"
+    :md-page-options="page_options"
+    @pagination="onPagination($event)">
+    </md-table-pagination>
+	-->
+</md-table-card>
+
+
+	<!-- feeds table -->
+	  <md-table-card v-show="!(createNEWfeed || idEDITfeed>0) && isPath('/feeds') && authId">
+
+		  <md-table md-sort="name" @sort="reOrder">
+			  <md-table-header>
+				<md-table-row>
+				  <md-table-head md-sort-by="id">id</md-table-head>
+				  <md-table-head md-sort-by="name">name</md-table-head>
+				  <md-table-head>  </md-table-head>
+				</md-table-row>
+			  </md-table-header>
+
+			  <md-table-body>
+				<md-table-row v-for="feed in orderedFEEDItems">
+
+				  <md-table-cell class="align_left">{{feed.id}}</md-table-cell>
+				  <md-table-cell class="align_left w100">{{feed.name}}</md-table-cell>
+
+				  <md-table-cell class="align_left actions">
+					  <span v-show="feed.id!=idEDITfeed">
+						<md-button v-on:click="EDITfeed(feed.id)"><i class="material-icons">mode_edit</i></md-button>
+						<!--
+						<md-button class="md-warn" v-on:click="KILLfeed(feed.id)"><i class="material-icons">clear</i></md-button>
+						-->
+					  </span>&nbsp;
+				  </md-table-cell>
+
+				</md-table-row>
+			  </md-table-body>
+		 </md-table>
+
+		 <!--
+	   <md-table-pagination
+    :md-size="size"
+    :md-total="count"
+    :md-page="page"
+    md-label="Rows"
+    md-separator="of"
+    :md-page-options="page_options"
+    @pagination="onPagination($event)">
+    </md-table-pagination>
+	-->
+</md-table-card>
+
+
+	<!-- overlays table -->
+	  <md-table-card v-show="!(createNEWoverlay || idEDIToverlay>0) && isPath('/overlays') && authId">
+
+		  <md-table md-sort="name" @sort="reOrder">
+			  <md-table-header>
+				<md-table-row>
+				  <md-table-head md-sort-by="id">id</md-table-head>
+				  <md-table-head>preview</md-table-head>
+				  <md-table-head md-sort-by="name">name</md-table-head>
+				  <md-table-head md-sort-by="fileUuid">android file</md-table-head>
+				  <md-table-head md-sort-by="fileUuid">ios file</md-table-head>
+				  <md-table-head>  </md-table-head>
+				</md-table-row>
+			  </md-table-header>
+
+			  <md-table-body>
+				<md-table-row v-for="overlay in orderedOVERLAYItems">
+
+				  <md-table-cell class="align_left">{{overlay.id}}</md-table-cell>
+				  <md-table-cell class="align_left"><a :href="overlay.previewUuidSRC" target=_blank><img :src="overlay.previewUuidSRC" width=100/></a></md-table-cell>
+				  <md-table-cell class="align_left w100">{{overlay.name}}</md-table-cell>
+				  
+				  <md-table-cell class="align_left">
+				  
+					<span v-show="overlay.type=='image'"><a :href="overlay.media_android_link" target="_blank"><img :src="overlay.media_android_link" style="width:100%;min-width:150px"></a></span>
+					<span v-show="overlay.type=='video'">
+					<video  loop="loop" controls="controls" style="width:100%;min-width:150px">
+					  <source :src="overlay.media_android_link">
+					  Video tag not supported. Download the video <a :href="overlay.media_ios_link">here</a>.
+					 </video>
+					</span>
+					</md-table-cell>
+				  
+				  <md-table-cell class="align_left">
+				  
+					<span v-show="overlay.type=='image'"><a :href="overlay.media_ios_link" target="_blank"><img :src="overlay.media_ios_link" style="width:100%;min-width:150px"></a></span>
+					<span v-show="overlay.type=='video'">
+					<video  loop="loop" controls="controls" style="width:100%;min-width:150px">
+					  <source :src="overlay.media_ios_link">
+					  Video tag not supported. Download the video <a :href="overlay.media_ios_link">here</a>.
+					 </video>
+					</span>
+					</md-table-cell>
+
+				  <md-table-cell class="align_left actions">
+						<md-button v-on:click="EDIToverlay(overlay.id)"><i class="material-icons">mode_edit</i></md-button>
+						<!--
+						<md-button class="md-warn" v-on:click="KILLoverlay(overlay.id)"><i class="material-icons">clear</i></md-button>
+						-->
+				  </md-table-cell>
+
+				</md-table-row>
+			  </md-table-body>
+		 </md-table>
+
+		 <!--
+	   <md-table-pagination
+    :md-size="size"
+    :md-total="count"
+    :md-page="page"
+    md-label="Rows"
+    md-separator="of"
+    :md-page-options="page_options"
+    @pagination="onPagination($event)">
+    </md-table-pagination>
+	-->
+</md-table-card>
+
+
+
+
+
+	<!-- polls table -->
+	  <md-table-card v-show="!(createNEWpoll || idEDITpoll>0) && isPath('/polls') && authId">
+
+		  <md-table md-sort="name" @sort="reOrder">
+			  <md-table-header>
+				<md-table-row>
+				  <md-table-head md-sort-by="id">id</md-table-head>
+				  <md-table-head md-sort-by="name">name</md-table-head>
+				  <md-table-head md-sort-by="active">active</md-table-head>
+				  <md-table-head>  </md-table-head>
+				</md-table-row>
+			  </md-table-header>
+
+			  <md-table-body>
+				<md-table-row v-for="poll in orderedPOLLItems" v-bind:class="{ 'grayed_row': !(poll.isActive)}">
+
+				  <md-table-cell class="align_left">{{poll.id}}</md-table-cell>
+				  <md-table-cell class="align_left w100">{{poll.name}}</md-table-cell>
+				  <md-table-cell class="align_left">
+					<md-button v-if="poll.isActive" @click="POLLsetActive(poll.id,false)" class="md-raised big_button_in_tab md-warn">off</md-button>
+					<md-button v-if="!poll.isActive" @click="POLLsetActive(poll.id,true)" class="md-raised big_button_in_tab md-primary">on</md-button>
+				 </md-table-cell>
+
+				  <md-table-cell class="align_left actions">
+					  <span v-show="poll.id!=idEDITpoll">
+						<md-button v-on:click="EDITpoll(poll.id)"><i class="material-icons">mode_edit</i></md-button>
+						<!--
+						<md-button class="md-warn" v-on:click="KILLpoll(poll.id)"><i class="material-icons">clear</i></md-button>
+						-->
+					  </span>&nbsp;
+				  </md-table-cell>
+
+				</md-table-row>
+			  </md-table-body>
+		 </md-table>
+
+		 <!--
+	   <md-table-pagination
+    :md-size="size"
+    :md-total="count"
+    :md-page="page"
+    md-label="Rows"
+    md-separator="of"
+    :md-page-options="page_options"
+    @pagination="onPagination($event)">
+    </md-table-pagination>
+	-->
+</md-table-card>
+
+
+
+	  <!-- overlay edit -->
+
+		  <md-card md-with-hover v-show="(createNEWoverlay || idEDIToverlay>0)  && isPath('/overlays') && authId">
+			<md-card-header>
+			  <div class="md-title" v-show="createNEWoverlay && isPath('/overlays') && authId">Create new overlay</div>
+			  <div class="md-title" v-show="idEDIToverlay>0 && isPath('/overlays') && authId">Edit overlay</div>
+			</md-card-header>
+			<form novalidate @submit.prevent="validateOverlayForm">
+
+		<md-input-container v-bind:class="{ 'md-input-invalid': attemptSubmitOverlay && missingOverlayName}">
+				<label>Name</label>
+				<md-input type="text" v-model="overlay_name"></md-input>
+
+				<span class="md-error" v-if="attemptSubmitOverlay && missingOverlayName">Please fill in the &quot;Name&quot;</span>
+			  </md-input-container>
+
+		<md-input-container v-bind:class="{ 'md-input-invalid': attemptSubmitOverlay && missingOverlayType}">
+				<label>Type</label>
+				<md-select v-model="overlay_type"><md-option value="image">image</md-option><md-option value="video">video</md-option></md-select>
+
+				<span class="md-error" v-if="attemptSubmitOverlay && missingOverlayType">Please select overlay type</span>
+			  </md-input-container>
+
+			<div>
+			  <div v-show="!overlay_image">
+				<input id="postFileOverlayImage" type="file" accept="image/*" @change="onFileChangeOverlayImage" style="display:none">
+
+				<md-button class="md-raised" @click="overlay_image_upload()">
+					<label>select preview image</label>
+				</md-button>
+				</div>
+
+			  <div v-show="overlay_image">
+				<img :src="overlay_image" width=100 /><br>
+				<md-button @click="removeOverlayImage">Remove image</button>
+			  </div>
+			</div>
+
+			  <div style="margin-top:8px;margin-bottom:8px;border-top:1px solid cyan">
+				<input id="postFileInputOverlayMedia_android_" type="file" @change="onFileChangeOverlayMediaAndroid" style="display:none">
+
+				<md-button class="md-raised" @click="overlay_media_android_upload()" v-show="!overlay_media_android_sel">
+					<label>select android file</label>
+				</md-button>
+
+				<div v-show="overlay_media_android_sel">
+				<p>Android File selected</p>
+
+				<md-button class="md-raised" @click="cleanMEDIA_overlay_android">
+					<label>select another</label>
+				</md-button>
+				</div>
+
+			  </div>
+
+			  <div style="margin-top:8px;margin-bottom:8px;border-top:1px solid lightgreen">
+				<input id="postFileInputOverlayMedia_ios_" type="file" @change="onFileChangeOverlayMediaIos" style="display:none">
+
+				<md-button class="md-raised" @click="overlay_media_ios_upload()" v-show="!overlay_media_ios_sel">
+					<label>select ios file</label>
+				</md-button>
+
+				<div v-show="overlay_media_ios_sel">
+				<p>iOS File selected</p>
+
+				<md-button class="md-raised" @click="cleanMEDIA_overlay_ios">
+					<label>select another</label>
+				</md-button>
+						
+				</div>
+			  </div>
+			  
+					<p v-if="showLOADINGspinnerOverlay">Loading data... <md-spinner :md-size="20" md-indeterminate class="md-accent"></md-spinner> <md-button @click="doReloadPage">cancel</md-button></P>					
+					<p v-if="showLOADINGerrorOverlay" style="color:red">Save error. <a href="#" @click="validateOverlayForm">Try again</a></P>
+					
+
+
+			  <md-card-actions v-if="!showLOADINGspinnerOverlay">
+				  <md-button v-on:click="validateOverlayForm" class="md-raised md-primary" :disabled="!canTrySendOverlay">Send</md-button>
+				  <md-button v-on:click="clearOverlayForm" class="md-raised">cancel</md-button>
+			  </md-card-actions>
+			  </form>
+			  </md-card>
+
+
+
+	  <!--
+	  <p>current user {{authId}}</p>
+	  <pre>user<br>{{user}}</pre>
+	  	 -->
+		  <!--
+	  <pre>posts_list<br>{{posts_list}}</pre>
+		-->
+
+	<!--
+	  <pre>users_list<br>{{users_list}}</pre>
+	  -->
+
+	  <span style="display:none" id="get_post_do" @click="do_get_post"></span>
+	  <input style="display:none" id="post_id_prepare" value="">
+	  
+	  <div v-if="aPostID>0">
+	  
+		
+	  <md-table-card>
+		  <md-table md-sort="datetime" @sort="reOrder">
+			  <md-table-header>
+				<md-table-row>
+				  <md-table-head md-sort-by="id" md-numeric id="posts_id">id</md-table-head>
+				  <!--
+				  <md-table-head md-sort-by="title">title</md-table-head>
+				  <md-table-head md-sort-by="subtitle">subtitle</md-table-head>
+				  -->
+				  <md-table-head md-sort-by="description">description</md-table-head>
+				  <md-table-head md-sort-by="mediatype" id="posts_mediatype">mediatype</md-table-head>
+				  <md-table-head md-sort-by="medialink">media</md-table-head>
+				  <md-table-head md-sort-by="userId" md-numeric id="posts_userid">userId</md-table-head>
+				  <!--
+				  <md-table-head md-sort-by="comments" md-numeric id="posts_comments">comments</md-table-head>
+				  -->
+				  <md-table-head md-sort-by="datetime" md-numeric id="posts_datetime">datetime</md-table-head>
+				</md-table-row>
+			  </md-table-header>
+
+			  <md-table-body>
+				<md-table-row>
+				  <md-table-cell>{{aPost.id}}</md-table-cell>
+				  <!--
+				  <md-table-cell class="align_left min_padding"><span v-show="aPost.title=='undefined'">&nbsp;</span><span v-show="aPost.title!='undefined'">{{aPost.title}}</span></md-table-cell>
+				  <md-table-cell class="align_left min_padding"><span v-show="aPost.subtitle=='undefined'">&nbsp;</span><span v-show="aPost.subtitle!='undefined'">{{aPost.subtitle}}</span></md-table-cell>
+				  -->
+				  <md-table-cell class="align_left w100"><span class="cl_post_desc">{{aPost.description}}</span></md-table-cell>
+				  <md-table-cell>{{aPost.mediatype}}</md-table-cell>
+
+				  <md-table-cell class="align_left">
+					<span v-show="aPost.mediatype=='image'"><a :href="aPost.medialink" target="_blank"><img :src="aPost.medialink" style="width:100%;min-width:150px"></a></span>
+					<span v-show="aPost.mediatype=='video'">
+					<video  loop="loop" controls="controls" style="width:100%;min-width:150px">
+					  <source :src="aPost.medialink">
+					  Video tag not supported. Download the video <a :href="aPost.medialink">here</a>.
+					 </video> 
+ <!--
+					<a :href="aPost.medialink" target="_blank">{{aPost.medialinkUuid}}</a>
+				  -->
+					</span>
+				  </md-table-cell>
+
+				  <md-table-cell>{{aPost.userId}}<span v-show="aPost.userNAME"> ({{aPost.userNAME}})</span></md-table-cell>
+				  <!--
+				  <md-table-cell><span v-show="!aPost.comments">&mdash;</span><a href="#comments/" v-on:click="toCommentsByPost(aPost.id)" v-show="aPost.comments">{{aPost.comments}}</a></md-table-cell>
+				  -->
+				  <md-table-cell><span v-show="aPost.dateTimeSTR">{{aPost.dateTimeSTR}}</span><span v-show="!aPost.dateTimeSTR">{{aPost.datetime}}</span></md-table-cell>
+				  <md-table-cell>
+<!--
+					<md-button v-on:click="EDITpost(aPost.id)"><i class="material-icons">mode_edit</i></md-button>
+-->
+					<!--
+					<md-button class="md-warn" v-on:click="KILLpost(aPost.id)"><i class="material-icons">clear</i></md-button>
+					-->
+
+				  </md-table-cell>
+				</md-table-row>
+			  </md-table-body>
+		 </md-table>
+
+		 <!--
+		  <md-table-pagination
+    :md-size="size"
+    :md-total="count"
+    :md-page="page"
+    md-label="Rows"
+    md-separator="of"
+    :md-page-options="page_options"
+    @pagination="onPagination($event)">
+    </md-table-pagination>
+	-->
+	
+	<h3>Comments: {{aPost.countComments}}</h3>
+	
+	<md-table md-sort="datetime" @sort="reOrder" v-if="aPost.countComments">
+			  <md-table-header>
+				<md-table-row>
+				  <md-table-head md-sort-by="id" md-numeric id="posts_id">id</md-table-head>
+				  <md-table-head md-sort-by="text">text</md-table-head>
+				  <md-table-head md-sort-by="postId" md-numeric id="posts_userid">post</md-table-head>
+				  <md-table-head md-sort-by="userId" md-numeric id="posts_feed">user</md-table-head>
+				  <md-table-head md-sort-by="datetime" md-numeric id="posts_datetime">datetime</md-table-head>
+				</md-table-row>
+			  </md-table-header>
+
+			  <md-table-body>
+				<md-table-row v-for="comment in aComments">
+				  <md-table-cell>{{comment.id}}</md-table-cell>
+				  <md-table-cell class="align_left">{{comment.text}}</md-table-cell>
+				  <md-table-cell>{{comment.postName}}</span></md-table-cell>
+				  <md-table-cell>{{comment.userName}}</span></md-table-cell>
+				  <md-table-cell><span v-show="comment.dateTimeSTR">{{comment.dateTimeSTR}}</span><span v-show="!comment.dateTimeSTR">{{comment.datetime}}</span></md-table-cell>
+				  <md-table-cell>
+						<!--
+					<md-button v-on:click="EDITcomment(comment.id)"><i class="material-icons">mode_edit</i></md-button>
+					<md-button class="md-warn" v-on:click="KILLcomment(comment.id)"><i class="material-icons">clear</i></md-button>
+						-->
+				  </md-table-cell>
+				</md-table-row>
+			  </md-table-body>
+		 </md-table>
+
+	
+</md-table-card>
+		
+	  </div>
+
+</div>
+</template>
+
+<template id="login_">
+	<div>
+
+
+	</div>
+</template>
+
+<template id="logout_">
+	<div>
+
+
+	</div>
+</template>
+
+
+
+<template id="one_post_">
+  <div>
+      <h1>Post</h1> 
+	  
+	 <div class="loaders_div">
+	 <!--
+		<p>post id id {{$route.params.post_id}}</p>
+		-->
+		
+		
+	 </div>
+  </div>
+</template>
+
+<template id="posts_">
+  <div>
+      <h1>Posts</h1>
+  </div>
+</template>
+
+<template id="comments_">
+  <div>
+      <h1>Comments</h1>
+
+  </div>
+</template>
+
+<template id="feeds_">
+  <div>
+      <h1>Feeds</h1>
+
+  </div>
+</template>
+
+<template id="polls_">
+  <div>
+      <h1>Polls</h1>
+
+  </div>
+</template>
+
+<template id="users_">
+  <div>
+      <h1>Users Page</h1>
+
+  </div>
+</template>
+
+<template id="overlays_">
+  <div>
+      <h1>Overlays Page</h1>
+
+  </div>
+</template>
+
+
+<!--
+<script src='https://unpkg.com/vue@latest'></script>
+<script src='https://unpkg.com/vue-router'></script>
+<script src='https://unpkg.com/vuex'></script>
+<script src="https://unpkg.com/vue-resource"></script>
+
+<script src='https://unpkg.com/vue-material@latest'></script>
+
+<script src='https://unpkg.com/lodash'></script>
+-->
+
+
+<script src='/local/vue.min.js'></script>
+<script src='/local/vue-router.js'></script>
+<script src='/local/vuex.min.js'></script>
+<script src="/local/vue-resource.min1.js"></script>
+
+<script src='/local/vue-material.min.js'></script>
+<script src='/local/lodash.min1.js'></script>
+
+
+<script src="/js/const-guest.js"></script>
+
+<script src="/js/store.js"></script>
+<script src="/js/router.js"></script>
+<script src="/js/computed.js"></script>
+<script src="/js/methods.js"></script>
+<script src="/js/index.js"></script>
+
+
+
+</body>
+</html>

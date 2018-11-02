@@ -1,0 +1,128 @@
+#!/usr/bin/env node
+
+'use strict';
+
+let date = new Date()
+    , app = null
+    , session = null
+    , parser = null
+    , fs = require('fs')
+    , path = require('path')
+    , winston = require('winston')
+    , chat = require('../routes/chat')
+    , logPath = '/../frontend/logs'
+    , debug = require('debug')('kenya:server')
+    , http = require('http');
+
+if (!fs.existsSync(path.join(__dirname, `${logPath}`))) {
+    fs.mkdirSync(path.join(__dirname, `${logPath}`));
+}
+
+const logger = new (winston.Logger)({
+    transports: [
+        new (winston.transports.Console)({
+            level: 'info'
+        }),
+        new (winston.transports.File)({
+            name: 'error-file',
+            filename: path.join(__dirname, `${logPath}/nodejs-error-${date.toISOString()}.log`),
+            level: 'error'
+        }),
+        new (winston.transports.File)({
+            name: 'unhandled-file',
+            filename: path.join(__dirname, `${logPath}/nodejs-unhandled-${date.toISOString()}.log`),
+            handleExceptions: true,
+            humanReadableUnhandledException: true
+        })
+    ]
+});
+logger.exitOnError = false;
+global.logger = logger;
+
+function runConfig(environment) {
+    // Config
+    global.logger.info('---> server env', JSON.stringify(process.env.config));
+    if (process.env.config) {
+        global.logger.info('---> server starts with env');
+        global.config = JSON.parse(process.env.config);
+    } else {
+        global.logger.info('---> server starts with config');
+        global.config = require('config.json')(path.join(__dirname, '/../config/server.json'), environment);
+    }
+
+    // Import database schema
+    global.db = require('../db/schema');
+
+    require('../db/prefill')(global.db);
+
+    let port = normalizePort(process.env.PORT || global.config.server.port || '80');
+    [app, session, parser] = require('../app');
+
+    // Get port from environment and store in Express.
+    app.set('port', port);
+
+
+    // setTimeout(()=>require('../db/prefill')(global.db), 5000);
+
+    // Create HTTP server.
+    let server = http.createServer(app);
+
+    // Listen on provided port, on all network interfaces.
+    server.on('error', (error) => {
+        if (error.syscall !== 'listen') {
+            throw error;
+        }
+        let bind = typeof port === 'string' ? `Pipe ${port}` : `Port ${port}`;
+        // handle specific listen errors with friendly messages
+        switch (error.code) {
+            case 'EACCES':
+                console.error(`${bind} requires elevated privileges`);
+                process.exit(1);
+                break;
+            case 'EADDRINUSE':
+                console.error(`${bind} is already in use`);
+                process.exit(1);
+                break;
+            default:
+                throw error;
+        }
+    });
+
+    server.on('listening', () => {
+        let address = server.address();
+        let bind = typeof address === 'string' ? `pipe ${address}` : `port ${address.port}`;
+        debug(`Listening on ${bind}`);
+    });
+
+    chat.init(server, session, parser);
+
+    server.listen(port);
+}
+
+// Normalize a port into a number, string, or false.
+function normalizePort(val) {
+    let port = parseInt(val, 10);
+    if (isNaN(port)) {
+        // named pipe
+        return val;
+    } else if (port >= 0) {
+        // port number
+        return port;
+    }
+    return false;
+}
+
+try {
+    switch (process.env.mode) {
+        case 'PROD':
+            logger.info('--- server starting in environment: production ---');
+            runConfig('production');
+            break;
+        default:
+            logger.info('--- server starting in environment: temporary ---');
+            runConfig('temporary');
+            break;
+    }
+} catch (error) {
+    global.logger.error(error);
+}

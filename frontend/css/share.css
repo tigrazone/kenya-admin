@@ -1,0 +1,119 @@
+* {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+
+div.share {
+    width: 400px;
+    height: 550px;
+    font-family: 'Roboto Condensed', sans-serif;
+    text-align: center;
+    -webkit-box-shadow: 4px 4px 16px 0px rgba(0, 0, 0, 0.75);
+    -moz-box-shadow: 4px 4px 16px 0px rgba(0, 0, 0, 0.75);
+    box-shadow: 4px 4px 16px 0px rgba(0, 0, 0, 0.75);
+}
+
+div.share p {
+    padding: 18px 0;
+    font-size: 21px;
+    color: #192226;
+    letter-spacing: 0;
+    line-height: 30px;
+    text-align: center;
+}
+
+div.share ul.single, div.share ul.double, div.share ul.video {
+    overflow: hidden;
+    list-style-type: none;
+    text-align: center;
+}
+
+div.share ul.single li, div.share ul.double li, div.share ul.video li {
+    display: block;
+    float: left;
+    height: 0;
+    /*padding-bottom: 56.25%;*/
+    height: 211px;
+    width: 100%;
+    background-repeat: no-repeat;
+    background-size: cover;
+    text-align: center;
+}
+
+div.share ul.double li {
+    width: 50%;
+}
+
+div.share ul.description {
+    overflow: hidden;
+    color: white;
+    background-color: #192225;
+
+    font-size: 19px;
+    color: #FFFFFF;
+    letter-spacing: 0.2px;
+    text-align: center;
+}
+
+div.share ul.description li {
+    float: left;
+    width: 50%;
+    text-align: center;
+    font-size: 17px;
+    height: 64px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+div.share ul.description li + li {
+    /*border-left: 1px solid #5E6467;*/
+}
+
+div.share ul#preview_type {
+    margin: 0;
+    padding: 0;
+    height: 0;
+    padding-bottom: 56.25%;
+    text-align: center;
+}
+
+#preview_description_con {
+    /*color:black;*/
+    /*background-color: #FFBB11;*/
+}
+
+#preview_title {
+    display: block;
+    font-family: 'Roboto-Light';
+    font-size: 21px;
+    min-height: 88px;
+    padding: 16px 1em;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.share-btn{
+    height: 44px;
+    width: 140px;
+    background-repeat: no-repeat;
+}
+
+.share-btns{
+    display: flex;
+    flex-direction: row;
+    flex-flow: row;
+    justify-content: space-around;
+    padding: 10px;
+}
+
+body{
+    display: flex;
+    justify-content: center;
+    align-content: center;
+}

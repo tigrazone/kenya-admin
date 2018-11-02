@@ -1,0 +1,52 @@
+html
+    head
+        title=title
+        link(rel='stylesheet', href='/css/share.css', type='text/css')
+        link(rel='stylesheet', href='https://fonts.googleapis.com/css?family=Roboto+Condensed')
+        meta(name='title', content=article.title)
+        meta(name='description', content=article.description)
+        meta(property='og:url', content=requrl)
+        meta(property='og:type', content='website')
+        meta(property='og:title', content=apptitle)
+        meta(property='og:description', content=appdesc)
+        link(rel='http://fandomsport.com/wp-content/uploads/2016/08/DonFryeRaid2PremieresLAPart2AdIf1jQB240l-235x300.jpg')
+        meta(property='og:image', content='http://fandomsport.com/wp-content/uploads/2016/08/DonFryeRaid2PremieresLAPart2AdIf1jQB240l-235x300.jpg')
+        //- meta(property='og:url', content=requrl)
+        //- meta(property='og:type', content='website')
+        //- meta(property='og:title', content=title)
+        //- meta(property='og:description', content=title)        
+        //- link(rel='https://s3-us-west-2.amazonaws.com/' + bet.s3 + '/theses/images/' + bet.thesis.proImageURL)
+        //- meta(property='og:image', content='https://s3-us-west-2.amazonaws.com/' + bet.s3 + '/theses/images/' + bet.thesis.proImageURL)
+    body
+        div(class="share")
+            p=article.title
+            p=article.description
+
+            if article.mediatype == 'video'
+                video(width="320" height=((article.medialink.ratio * 320)||320) controls)
+                    source(src="http://kenyam-dev.s3-accelerate.amazonaws.com/media/" + article.medialinkUuid)
+                    |Your browser does not support the video tag.
+
+            if article.mediatype == 'image'
+                img(width="320" height=((article.medialink.ratio * 320)||320) src="http://kenyam-dev.s3-accelerate.amazonaws.com/media/" + article.medialinkUuid)
+                //    |Your browser does not support the img tag.
+
+            div(class="share-btns")
+                button(type='button' class="share-btn" style='background-image: url(/img/app-1.png)')
+                button(type='button' class="share-btn" style='background-image: url(/img/app-2.png)')
+
+            //if bet.thesis.thesisTypeId == 1
+            //    ul(class='single')
+            //        li(style='background-image: url(https://s3-us-west-2.amazonaws.com/' + bet.s3 + '/theses/images/' + bet.thesis.proImageURL.toLowerCase() + ')')
+            //else if bet.thesis.thesisTypeId == 3
+            //    ul(class='double')
+            //        li(style='background-image: url(https://s3-us-west-2.amazonaws.com/' + bet.s3 + '/theses/images/' + bet.thesis.proImageURL.toLowerCase() + ')')
+            //        li(style='background-image: url(https://s3-us-west-2.amazonaws.com/' + bet.s3 + '/theses/images/' + bet.thesis.conImageURL.toLowerCase() + ')')
+            //else if bet.thesis.thesisTypeId == 2
+            //    ul(class='video')
+            //        li
+            //            video(width="320", height="240", controls)
+            //                source(src='https://s3-us-west-2.amazonaws.com/' + bet.s3 + '/theses/videos/' + bet.thesis.videoURL.toLowerCase(), type='video/mp4')
+            //ul(class='description')
+            //    li=bet.thesis.proDescription
+            //    li=bet.thesis.conDescription

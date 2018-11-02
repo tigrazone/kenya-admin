@@ -1,0 +1,150 @@
+.md-card {
+	max-width:500px;
+	text-align:center;
+	margin-left:auto;
+	margin-right:auto;
+}
+
+.md-input-container{
+	width: 200px;
+	margin-left:auto;
+	margin-right:auto;
+}
+
+.md-card-actions{
+	width:200px;
+	margin-right:auto;
+	margin-left:auto;
+}
+
+
+.md-tabs-content
+{
+	height:auto !important;
+}
+
+
+.md-table-card
+{
+	width:100% !important;
+	max-width:100% !important;
+}
+
+
+
+td.align_left div
+{
+	text-align:left;
+}
+
+
+
+div.md-list-text-container
+div.md-card
+{
+	padding:1%;
+	width:80% !important;
+}
+
+h1
+{
+	margin-left:16px
+}
+
+
+#users_posts > .md-table-head-container,
+#users_id > .md-table-head-container,
+#posts_id > .md-table-head-container,
+#posts_userid > .md-table-head-container,
+#posts_mediatype > .md-table-head-container,
+#posts_datetime > .md-table-head-container,
+#posts_comments > .md-table-head-container,
+#posts_feed > .md-table-head-container
+{
+	text-align:center !important
+}
+
+.big_button_in_tab
+{
+	width:auto !important;
+	margin-right:8px !important;
+}
+
+.w100
+{
+	width:100%
+}
+
+.w100 > .md-table-cell-container,
+.min_padding > .md-table-cell-container
+{
+	padding:4px !important;
+}
+
+
+.md-sortable-icon {display:none!important}
+
+
+.md-table .md-table-cell.md-has-action .md-table-cell-container
+{
+	display:block !important;
+	white-space:nowrap !important;
+}
+
+#logout
+{
+	background:red !important
+}
+
+.posts_by_feed
+{
+	margin-right:16px;
+}
+
+.ava
+{
+	width: 55px !important;
+	height: 55px !important;
+	padding:0 !important;
+	border-radius:30% !important;
+}
+
+.cl_post_desc
+{
+	font-size: 85% !important;
+	line-height: 0.75 !important;
+}
+
+.grayed_row
+{
+	background:lightgray;
+}
+
+.posts_list_img
+{
+	border-radius:0 !important;
+	width:120px;
+	height:auto;
+	max-height:120px;
+	margin-bottom:10px !important;
+}
+
+
+div.loaders_div > p
+{
+	margin-left:16px;
+}
+
+.md-table-cell
+{
+	vertical-align:top !important;
+}
+
+@media only screen and (min-width: 1200px) {
+
+.cl_post_desc
+{
+	font-size: 100% !important;
+	line-height: 0.75 !important;
+}
+}

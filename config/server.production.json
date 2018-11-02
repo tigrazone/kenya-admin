@@ -1,0 +1,33 @@
+{
+  "server": {
+    "port": 80,
+    "clusterMode": false
+  },
+  "database": {
+    "host": "trm-kenya.cedcdrekb44e.us-west-2.rds.amazonaws.com",
+    "port": 3306,
+    "name": "trm_kenya",
+    "user": {
+      "name": "root",
+      "password": "e39bba281618b27e7a545b9f487e709024a4ee2d"
+    },
+    "logging": false,
+    "sync": false,
+    "force": false
+  },
+  "bucket": {
+    "name": "trm-kenya",
+    "clear": false
+  },
+  "aws": {
+    "region": "us-east-2",
+    "accessKeyId": "AKIAIKRMBVZ3YD6GEMQQ",
+    "secretAccessKey": "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"
+  },
+  "mailgun": {
+    "privateApi": "",
+    "publicApi": "",
+    "domainName": ""
+  },
+  "paginationLimit": 10
+}
